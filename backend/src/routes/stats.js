@@ -21,8 +21,12 @@ router.get('/', (req, res) => {
       SUM(input_tokens)        AS total_input_tokens,
       SUM(output_tokens)       AS total_output_tokens,
       ROUND(SUM(cost_usd), 6)  AS total_cost_usd,
+      ROUND(SUM(input_cost_usd), 6) AS total_input_cost_usd,
+      ROUND(SUM(output_cost_usd), 6) AS total_output_cost_usd,
       ROUND(AVG(duration_ms), 0) AS avg_duration_ms,
-      MAX(duration_ms)         AS max_duration_ms
+      MAX(duration_ms)         AS max_duration_ms,
+      ROUND(AVG(rate_limit_remaining), 0) AS avg_rate_limit_remaining,
+      MIN(rate_limit_remaining) AS min_rate_limit_remaining
     FROM spans
     ${where}
   `).get(params);
@@ -68,18 +72,36 @@ router.get('/', (req, res) => {
   const costTimeline = db.prepare(`
     SELECT
       ${bucketExpr} AS hour,
-      ROUND(SUM(cost_usd), 6)    AS cost_usd,
-      SUM(input_tokens)          AS input_tokens,
-      SUM(output_tokens)         AS output_tokens,
-      COUNT(*)                   AS span_count,
-      ROUND(AVG(duration_ms), 0) AS avg_duration_ms
+      ROUND(SUM(cost_usd), 6)       AS cost_usd,
+      ROUND(SUM(input_cost_usd), 6) AS input_cost_usd,
+      ROUND(SUM(output_cost_usd), 6) AS output_cost_usd,
+      SUM(input_tokens)             AS input_tokens,
+      SUM(output_tokens)            AS output_tokens,
+      COUNT(*)                      AS span_count,
+      ROUND(AVG(duration_ms), 0)    AS avg_duration_ms,
+      ROUND(AVG(rate_limit_remaining), 0) AS avg_rate_limit_remaining,
+      MAX(rate_limit_remaining)     AS max_rate_limit_remaining
     FROM spans
     ${where}
     GROUP BY hour
     ORDER BY hour ASC
   `).all(params);
 
-  res.json({ totals, byModel, costTimeline });
+  // Cost breakdown by input vs output
+  const costBreakdown = db.prepare(`
+    SELECT
+      ROUND(SUM(input_cost_usd), 6) AS input_cost_usd,
+      ROUND(SUM(output_cost_usd), 6) AS output_cost_usd,
+      ROUND(SUM(cost_usd), 6) AS total_cost_usd,
+      CASE
+        WHEN SUM(cost_usd) > 0 THEN ROUND(100.0 * SUM(input_cost_usd) / SUM(cost_usd), 2)
+        ELSE 0
+      END AS input_cost_percentage
+    FROM spans
+    ${where}
+  `).get(params);
+
+  res.json({ totals, byModel, costTimeline, costBreakdown });
 });
 
 export default router;

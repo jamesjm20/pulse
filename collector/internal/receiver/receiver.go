@@ -187,6 +187,10 @@ func convertSpan(sp *tracev1.Span, serviceName string) *store.Span {
 		DurationMs:   int64(sp.EndTimeUnixNano-sp.StartTimeUnixNano) / 1_000_000,
 		InputTokens:  attrIntAny(attrs, "gen_ai.usage.input_tokens", "input_tokens"),
 		OutputTokens: attrIntAny(attrs, "gen_ai.usage.output_tokens", "output_tokens"),
+		// Capture rate limit information from OTEL attributes
+		RateLimitLimit:       attrIntAny(attrs, "llm.rate_limit.limit"),
+		RateLimitRemaining:   attrIntAny(attrs, "llm.rate_limit.remaining"),
+		RateLimitResetTokens: attrString(attrs, "llm.rate_limit.reset_time"),
 	}
 
 	// Serialise all attributes as a JSON blob for storage

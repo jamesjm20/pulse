@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, Title, Text, Metric, BarList } from '@tremor/react';
 import {
   AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line,
 } from 'recharts';
 import { fetchStats, fetchConfig } from '../api';
 import type { Stats, Config } from '../types';
 import { formatCost, formatDuration, formatTokens } from '../utils';
+import LoadingPlaceholder from '../components/LoadingPlaceholder';
 
 export default function Overview() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -30,10 +32,22 @@ export default function Overview() {
   }, [load]);
 
   if (error) return <p className="text-red-500 text-sm">{error}</p>;
-  if (!stats) return <p className="text-gray-400 text-sm">Loading…</p>;
+  if (!stats || stats.totals.trace_count === 0) return <LoadingPlaceholder />;
 
-  const { totals, byModel, costTimeline } = stats;
+  const { totals, byModel, costTimeline, costBreakdown } = stats;
   const modelBarData = byModel.filter(m => m.cost_usd > 0).map((m) => ({ name: m.model, value: m.cost_usd }));
+
+  // Prepare pie chart data for cost breakdown
+  const costBreakdownData = [
+    { name: 'Input', value: costBreakdown.input_cost_usd },
+    { name: 'Output', value: costBreakdown.output_cost_usd },
+  ];
+  const COLORS = ['#3b82f6', '#ec4899'];
+
+  // Calculate rate limit utilization percentage
+  const rateLimitPct = totals.avg_rate_limit_remaining && totals.avg_rate_limit_remaining > 0
+    ? Math.max(0, 100 - ((totals.avg_rate_limit_remaining / 100000) * 100))
+    : 0;
 
   const allowance = config?.allowance_usd ?? 0;
   const allowancePct = allowance > 0 ? Math.min((totals.total_cost_usd / allowance) * 100, 100) : 0;
@@ -239,6 +253,118 @@ export default function Overview() {
               ))
             )}
           </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card>
+          <Title>Cost Breakdown</Title>
+          {costBreakdown.total_cost_usd === 0 ? (
+            <p className="text-gray-400 text-sm mt-4">No cost data yet</p>
+          ) : (
+            <>
+              <div className="mt-4 h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={costBreakdownData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${formatCost(value)}`}
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {costBreakdownData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Input Cost:</span>
+                  <span className="font-semibold text-blue-600">{formatCost(costBreakdown.input_cost_usd)} ({costBreakdown.input_cost_percentage.toFixed(1)}%)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Output Cost:</span>
+                  <span className="font-semibold text-pink-600">{formatCost(costBreakdown.output_cost_usd)} ({(100 - costBreakdown.input_cost_percentage).toFixed(1)}%)</span>
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card>
+          <Title>Rate Limit Status</Title>
+          <div className="mt-4">
+            <div className="text-center mb-4">
+              <Metric className="text-2xl">{(totals.avg_rate_limit_remaining ?? 0).toLocaleString()}</Metric>
+              <Text className="text-gray-600 text-sm">Tokens remaining</Text>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-gray-600">
+                <span>Utilization</span>
+                <span className="font-semibold">{rateLimitPct.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    rateLimitPct >= 90 ? 'bg-red-500' : rateLimitPct >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min(rateLimitPct, 100)}%` }}
+                />
+              </div>
+            </div>
+            {totals.min_rate_limit_remaining !== undefined && (
+              <p className="text-xs text-gray-500 mt-3">
+                Lowest point: {totals.min_rate_limit_remaining.toLocaleString()} tokens
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <Title>Rate Limit Timeline</Title>
+          {costTimeline.length === 0 ? (
+            <p className="text-gray-400 text-sm mt-4">No data yet</p>
+          ) : (
+            <div className="mt-4 h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={costTimeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="hour"
+                    tickFormatter={(h: string) => h.slice(11, 16)}
+                    tick={{ fill: '#9ca3af', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#9ca3af', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={40}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => v.toLocaleString()}
+                    labelFormatter={(l: string) => `${l}`}
+                    contentStyle={{ fontSize: 11, borderRadius: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="max_rate_limit_remaining"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </Card>
       </div>
     </div>

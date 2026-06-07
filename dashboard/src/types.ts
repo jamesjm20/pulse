@@ -10,7 +10,13 @@ export interface Span {
   duration_ms: number;
   input_tokens: number;
   output_tokens: number;
+  input_cost_usd: number;
+  output_cost_usd: number;
   cost_usd: number;
+  cost_model_version: string | null;
+  rate_limit_limit: number;
+  rate_limit_remaining: number;
+  rate_limit_reset_tokens: string | null;
   attributes: string | null;
   created_at: string;
 }
@@ -38,13 +44,24 @@ export interface ModelStat {
   token_efficiency: number;
 }
 
+export interface CostBreakdown {
+  input_cost_usd: number;
+  output_cost_usd: number;
+  total_cost_usd: number;
+  input_cost_percentage: number;
+}
+
 export interface TimelinePoint {
   hour: string;
   cost_usd: number;
+  input_cost_usd: number;
+  output_cost_usd: number;
   input_tokens: number;
   output_tokens: number;
   span_count: number;
   avg_duration_ms: number;
+  avg_rate_limit_remaining: number;
+  max_rate_limit_remaining: number;
 }
 
 export interface Config {
@@ -63,9 +80,14 @@ export interface Stats {
     total_input_tokens: number;
     total_output_tokens: number;
     total_cost_usd: number;
+    total_input_cost_usd: number;
+    total_output_cost_usd: number;
     avg_duration_ms: number;
     max_duration_ms: number;
+    avg_rate_limit_remaining: number;
+    min_rate_limit_remaining: number;
   };
   byModel: ModelStat[];
   costTimeline: TimelinePoint[];
+  costBreakdown: CostBreakdown;
 }

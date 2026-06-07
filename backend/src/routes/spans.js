@@ -8,30 +8,38 @@ const insert = db.prepare(`
   INSERT OR IGNORE INTO spans
     (id, trace_id, parent_id, name, service_name, model,
      start_time, end_time, duration_ms,
-     input_tokens, output_tokens, cost_usd, attributes)
+     input_tokens, output_tokens, input_cost_usd, output_cost_usd, cost_usd, cost_model_version,
+     rate_limit_limit, rate_limit_remaining, rate_limit_reset_tokens, attributes)
   VALUES
     (@id, @traceId, @parentId, @name, @serviceName, @model,
      @startTime, @endTime, @durationMs,
-     @inputTokens, @outputTokens, @costUsd, @attributes)
+     @inputTokens, @outputTokens, @inputCostUsd, @outputCostUsd, @costUsd, @costModelVersion,
+     @rateLimitLimit, @rateLimitRemaining, @rateLimitResetTokens, @attributes)
 `);
 
 const insertBatch = db.transaction((spans) => {
   let count = 0;
   for (const sp of spans) {
     const result = insert.run({
-      id:           sp.ID,
-      traceId:      sp.TraceID,
-      parentId:     sp.ParentID || null,
-      name:         sp.Name,
-      serviceName:  sp.ServiceName || null,
-      model:        sp.Model || null,
-      startTime:    sp.StartTime,
-      endTime:      sp.EndTime || null,
-      durationMs:   sp.DurationMs,
-      inputTokens:  sp.InputTokens,
-      outputTokens: sp.OutputTokens,
-      costUsd:      sp.CostUSD,
-      attributes:   sp.Attributes || null,
+      id:                  sp.ID,
+      traceId:             sp.TraceID,
+      parentId:            sp.ParentID || null,
+      name:                sp.Name,
+      serviceName:         sp.ServiceName || null,
+      model:               sp.Model || null,
+      startTime:           sp.StartTime,
+      endTime:             sp.EndTime || null,
+      durationMs:          sp.DurationMs,
+      inputTokens:         sp.InputTokens,
+      outputTokens:        sp.OutputTokens,
+      inputCostUsd:        sp.InputCostUSD || 0,
+      outputCostUsd:       sp.OutputCostUSD || 0,
+      costUsd:             sp.CostUSD,
+      costModelVersion:    sp.CostModelVersion || null,
+      rateLimitLimit:      sp.RateLimitLimit || 0,
+      rateLimitRemaining:  sp.RateLimitRemaining || 0,
+      rateLimitResetTokens: sp.RateLimitResetTokens || null,
+      attributes:          sp.Attributes || null,
     });
     count += result.changes;
   }

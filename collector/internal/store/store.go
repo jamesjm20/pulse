@@ -23,8 +23,18 @@ type Span struct {
 	InputTokens  int64
 	OutputTokens int64
 
-	// Cost in USD (enriched)
-	CostUSD float64
+	// Cost in USD (enriched) - separate input/output + total for compatibility
+	InputCostUSD  float64
+	OutputCostUSD float64
+	CostUSD       float64
+
+	// Cost model version for tracking pricing changes
+	CostModelVersion string
+
+	// Rate limit information (captured from API response headers)
+	RateLimitLimit       int64  // Total tokens/requests allowed
+	RateLimitRemaining   int64  // Tokens/requests remaining
+	RateLimitResetTokens string // When limit resets (ISO timestamp)
 
 	// Raw OTEL attributes as JSON blob
 	Attributes string
@@ -66,22 +76,28 @@ func (s *Store) Close() error {
 func (s *Store) migrate() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS spans (
-			id            TEXT PRIMARY KEY,
-			trace_id      TEXT NOT NULL,
-			parent_id     TEXT,
-			name          TEXT NOT NULL,
-			service_name  TEXT,
-			model         TEXT,
-			start_time    DATETIME NOT NULL,
-			end_time      DATETIME,
-			duration_ms   INTEGER,
-			input_tokens  INTEGER DEFAULT 0,
-			output_tokens INTEGER DEFAULT 0,
-			cost_usd      REAL DEFAULT 0,
-			attributes    TEXT,
-			exported      INTEGER DEFAULT 0,
-			exported_at   DATETIME,
-			created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+			id                       TEXT PRIMARY KEY,
+			trace_id                 TEXT NOT NULL,
+			parent_id                TEXT,
+			name                     TEXT NOT NULL,
+			service_name             TEXT,
+			model                    TEXT,
+			start_time               DATETIME NOT NULL,
+			end_time                 DATETIME,
+			duration_ms              INTEGER,
+			input_tokens             INTEGER DEFAULT 0,
+			output_tokens            INTEGER DEFAULT 0,
+			input_cost_usd           REAL DEFAULT 0,
+			output_cost_usd          REAL DEFAULT 0,
+			cost_usd                 REAL DEFAULT 0,
+			cost_model_version       TEXT,
+			rate_limit_limit         INTEGER DEFAULT 0,
+			rate_limit_remaining     INTEGER DEFAULT 0,
+			rate_limit_reset_tokens  TEXT,
+			attributes               TEXT,
+			exported                 INTEGER DEFAULT 0,
+			exported_at              DATETIME,
+			created_at               DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 
 		CREATE INDEX IF NOT EXISTS idx_spans_exported   ON spans(exported);
@@ -98,14 +114,16 @@ func (s *Store) InsertSpan(span *Span) error {
 		INSERT OR IGNORE INTO spans
 			(id, trace_id, parent_id, name, service_name, model,
 			 start_time, end_time, duration_ms,
-			 input_tokens, output_tokens, cost_usd,
+			 input_tokens, output_tokens, input_cost_usd, output_cost_usd, cost_usd, cost_model_version,
+			 rate_limit_limit, rate_limit_remaining, rate_limit_reset_tokens,
 			 attributes, exported)
 		VALUES
-			(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+			(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
 	`,
 		span.ID, span.TraceID, span.ParentID, span.Name, span.ServiceName, span.Model,
 		span.StartTime, span.EndTime, span.DurationMs,
-		span.InputTokens, span.OutputTokens, span.CostUSD,
+		span.InputTokens, span.OutputTokens, span.InputCostUSD, span.OutputCostUSD, span.CostUSD, span.CostModelVersion,
+		span.RateLimitLimit, span.RateLimitRemaining, span.RateLimitResetTokens,
 		span.Attributes,
 	)
 	return err
@@ -116,7 +134,8 @@ func (s *Store) UnexportedSpans(limit int) ([]*Span, error) {
 	rows, err := s.db.Query(`
 		SELECT id, trace_id, parent_id, name, service_name, model,
 		       start_time, end_time, duration_ms,
-		       input_tokens, output_tokens, cost_usd, attributes
+		       input_tokens, output_tokens, input_cost_usd, output_cost_usd, cost_usd, cost_model_version,
+		       rate_limit_limit, rate_limit_remaining, rate_limit_reset_tokens, attributes
 		FROM spans
 		WHERE exported = 0
 		ORDER BY start_time ASC
@@ -133,7 +152,8 @@ func (s *Store) UnexportedSpans(limit int) ([]*Span, error) {
 		if err := rows.Scan(
 			&sp.ID, &sp.TraceID, &sp.ParentID, &sp.Name, &sp.ServiceName, &sp.Model,
 			&sp.StartTime, &sp.EndTime, &sp.DurationMs,
-			&sp.InputTokens, &sp.OutputTokens, &sp.CostUSD, &sp.Attributes,
+			&sp.InputTokens, &sp.OutputTokens, &sp.InputCostUSD, &sp.OutputCostUSD, &sp.CostUSD, &sp.CostModelVersion,
+			&sp.RateLimitLimit, &sp.RateLimitRemaining, &sp.RateLimitResetTokens, &sp.Attributes,
 		); err != nil {
 			return nil, err
 		}

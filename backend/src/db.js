@@ -13,20 +13,26 @@ db.pragma('foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS spans (
-    id            TEXT PRIMARY KEY,
-    trace_id      TEXT NOT NULL,
-    parent_id     TEXT,
-    name          TEXT NOT NULL,
-    service_name  TEXT,
-    model         TEXT,
-    start_time    TEXT NOT NULL,
-    end_time      TEXT,
-    duration_ms   INTEGER,
-    input_tokens  INTEGER DEFAULT 0,
-    output_tokens INTEGER DEFAULT 0,
-    cost_usd      REAL DEFAULT 0,
-    attributes    TEXT,
-    created_at    TEXT DEFAULT (datetime('now'))
+    id                       TEXT PRIMARY KEY,
+    trace_id                 TEXT NOT NULL,
+    parent_id                TEXT,
+    name                     TEXT NOT NULL,
+    service_name             TEXT,
+    model                    TEXT,
+    start_time               TEXT NOT NULL,
+    end_time                 TEXT,
+    duration_ms              INTEGER,
+    input_tokens             INTEGER DEFAULT 0,
+    output_tokens            INTEGER DEFAULT 0,
+    input_cost_usd           REAL DEFAULT 0,
+    output_cost_usd          REAL DEFAULT 0,
+    cost_usd                 REAL DEFAULT 0,
+    cost_model_version       TEXT,
+    rate_limit_limit         INTEGER DEFAULT 0,
+    rate_limit_remaining     INTEGER DEFAULT 0,
+    rate_limit_reset_tokens  TEXT,
+    attributes               TEXT,
+    created_at               TEXT DEFAULT (datetime('now'))
   );
 
   CREATE INDEX IF NOT EXISTS idx_spans_trace_id   ON spans(trace_id);
