@@ -2,8 +2,6 @@
 
 Pulse is an observability platform that captures, enriches, and visualizes OTEL traces from Claude API calls. Monitor cost, latency, token usage, and model performance in real-time.
 
-![Pulse Dashboard](https://via.placeholder.com/1200x600?text=Pulse+Dashboard)
-
 ## Features
 
 - **Real-time trace capture** — Receives OTEL traces via gRPC and HTTP
