@@ -3,6 +3,7 @@ import cors from 'cors';
 import spansRouter from './routes/spans.js';
 import tracesRouter from './routes/traces.js';
 import statsRouter from './routes/stats.js';
+import configRouter from './routes/config.js';
 
 const PORT = process.env.PORT ?? 3000;
 
@@ -15,6 +16,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/spans',  spansRouter);
 app.use('/api/traces', tracesRouter);
 app.use('/api/stats',  statsRouter);
+app.use('/api/config', configRouter);
 
 // Central error handler
 app.use((err, _req, res, _next) => {

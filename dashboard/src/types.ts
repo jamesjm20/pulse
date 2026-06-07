@@ -47,6 +47,15 @@ export interface TimelinePoint {
   avg_duration_ms: number;
 }
 
+export interface Config {
+  allowance_usd: number;
+  allowance_period: string;
+  user: {
+    email: string | null;
+    account_id: string | null;
+  } | null;
+}
+
 export interface Stats {
   totals: {
     trace_count: number;

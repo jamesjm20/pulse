@@ -21,6 +21,8 @@ services:
       - pulse_db:/app/data
     environment:
       - DB_PATH=/app/data/pulse.db
+      - ALLOWANCE_USD=20.00
+      - ALLOWANCE_PERIOD=monthly
     networks:
       - pulse
 

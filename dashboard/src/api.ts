@@ -1,4 +1,4 @@
-import type { Stats, Trace, Span } from './types';
+import type { Stats, Trace, Span, Config } from './types';
 
 const BASE = '/api';
 
@@ -11,6 +11,9 @@ async function get<T>(path: string, params?: Record<string, string>): Promise<T>
 
 export const fetchStats = (params?: Record<string, string>) =>
   get<Stats>('/stats', params);
+
+export const fetchConfig = () =>
+  get<Config>('/config');
 
 export const fetchTraces = (params?: Record<string, string>) =>
   get<{ traces: Trace[] }>('/traces', params);

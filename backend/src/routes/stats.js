@@ -42,13 +42,36 @@ router.get('/', (req, res) => {
     ORDER BY cost_usd DESC
   `).all(params);
 
+  // Auto-select bucket size based on data spread
+  const timeRange = db.prepare(`
+    SELECT
+      MIN(SUBSTR(start_time, 1, 19)) AS earliest,
+      MAX(SUBSTR(start_time, 1, 19)) AS latest
+    FROM spans ${where}
+  `).get(params);
+
+  const spanMs = timeRange?.earliest && timeRange?.latest
+    ? new Date(timeRange.latest.replace(' ', 'T') + 'Z').getTime() - new Date(timeRange.earliest.replace(' ', 'T') + 'Z').getTime()
+    : 0;
+  const spanHours = spanMs / (1000 * 60 * 60);
+
+  // start_time is stored as "2026-06-07 16:46:20.388 +0000 UTC" — strip suffix for strftime
+  const t = `SUBSTR(start_time, 1, 19)`;
+
+  // < 2h → 5-min buckets, < 48h → 1h buckets, else → 6h buckets
+  const bucketExpr = spanHours < 2
+    ? `strftime('%Y-%m-%dT%H:', ${t}) || printf('%02d', (CAST(strftime('%M', ${t}) AS INTEGER) / 5) * 5) || ':00Z'`
+    : spanHours < 48
+    ? `strftime('%Y-%m-%dT%H:00:00Z', ${t})`
+    : `strftime('%Y-%m-%dT', ${t}) || printf('%02d', (CAST(strftime('%H', ${t}) AS INTEGER) / 6) * 6) || ':00:00Z'`;
+
   const costTimeline = db.prepare(`
     SELECT
-      strftime('%Y-%m-%dT%H:00:00Z', start_time) AS hour,
-      ROUND(SUM(cost_usd), 6)   AS cost_usd,
-      SUM(input_tokens)         AS input_tokens,
-      SUM(output_tokens)        AS output_tokens,
-      COUNT(*)                  AS span_count,
+      ${bucketExpr} AS hour,
+      ROUND(SUM(cost_usd), 6)    AS cost_usd,
+      SUM(input_tokens)          AS input_tokens,
+      SUM(output_tokens)         AS output_tokens,
+      COUNT(*)                   AS span_count,
       ROUND(AVG(duration_ms), 0) AS avg_duration_ms
     FROM spans
     ${where}
