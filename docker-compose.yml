@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  collector:
+    build:
+      context: ./collector
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - pulse_db:/app/data
+    networks:
+      - pulse
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - pulse_db:/app/data
+    networks:
+      - pulse
+
+  dashboard:
+    build:
+      context: ./dashboard
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pulse
+
+volumes:
+  pulse_db:
+
+networks:
+  pulse:
+    driver: bridge

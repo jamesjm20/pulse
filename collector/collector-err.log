@@ -1,0 +1,33 @@
+{"level":"info","ts":1780843014.384184,"caller":"collector/main.go:73","msg":"Pulse collector running","grpc":":4317","http":":4318"}
+{"level":"info","ts":1780843014.384184,"caller":"exporter/exporter.go:44","msg":"exporter started","backend":"http://localhost:3000/api/spans","flush_interval":10,"batch_size":100}
+{"level":"info","ts":1780843014.384184,"caller":"receiver/receiver.go:104","msg":"HTTP receiver listening","addr":":4318"}
+{"level":"info","ts":1780843014.385184,"caller":"receiver/receiver.go:89","msg":"gRPC receiver listening","addr":":4317"}
+{"level":"info","ts":1780843353.8575988,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843354.4045472,"caller":"exporter/exporter.go:88","msg":"exported batch","count":1}
+{"level":"info","ts":1780843367.1353636,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":7}
+{"level":"info","ts":1780843372.1757593,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843374.3904967,"caller":"exporter/exporter.go:88","msg":"exported batch","count":8}
+{"level":"info","ts":1780843379.3238451,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":7}
+{"level":"info","ts":1780843384.3890116,"caller":"exporter/exporter.go:88","msg":"exported batch","count":7}
+{"level":"info","ts":1780843385.8332741,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":3}
+{"level":"info","ts":1780843391.74105,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":4}
+{"level":"info","ts":1780843394.3886015,"caller":"exporter/exporter.go:88","msg":"exported batch","count":7}
+{"level":"info","ts":1780843406.245227,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843414.3888934,"caller":"exporter/exporter.go:88","msg":"exported batch","count":1}
+{"level":"info","ts":1780843437.9763398,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":6}
+{"level":"info","ts":1780843444.3896909,"caller":"exporter/exporter.go:88","msg":"exported batch","count":6}
+{"level":"info","ts":1780843447.9138086,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":3}
+{"level":"info","ts":1780843454.388884,"caller":"exporter/exporter.go:88","msg":"exported batch","count":3}
+{"level":"info","ts":1780843489.4152508,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":4}
+{"level":"info","ts":1780843494.3887718,"caller":"exporter/exporter.go:88","msg":"exported batch","count":4}
+{"level":"info","ts":1780843529.771296,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843534.3888724,"caller":"exporter/exporter.go:88","msg":"exported batch","count":1}
+{"level":"info","ts":1780843541.8946695,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843544.3884854,"caller":"exporter/exporter.go:88","msg":"exported batch","count":1}
+{"level":"info","ts":1780843565.9812078,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":3}
+{"level":"info","ts":1780843574.388554,"caller":"exporter/exporter.go:88","msg":"exported batch","count":3}
+{"level":"info","ts":1780843603.1290388,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":3}
+{"level":"info","ts":1780843604.3883522,"caller":"exporter/exporter.go:88","msg":"exported batch","count":3}
+{"level":"info","ts":1780843662.4808996,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":1}
+{"level":"info","ts":1780843664.388914,"caller":"exporter/exporter.go:88","msg":"exported batch","count":1}
+{"level":"info","ts":1780843669.6565096,"caller":"receiver/receiver.go:157","msg":"export received","resource_spans":1,"spans":4}

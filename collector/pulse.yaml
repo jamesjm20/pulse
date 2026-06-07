@@ -1,0 +1,26 @@
+storage:
+  path: /app/data/pulse.db
+
+receiver:
+  grpc_addr: ":4317"
+  http_addr: ":4318"
+
+enricher:
+  model_pricing:
+    claude-opus-4:
+      input_price_per_1m: 15.00
+      output_price_per_1m: 75.00
+    claude-sonnet-4:
+      input_price_per_1m: 3.00
+      output_price_per_1m: 15.00
+    claude-haiku-3-5:
+      input_price_per_1m: 0.80
+      output_price_per_1m: 4.00
+    claude-haiku-4-5:
+      input_price_per_1m: 1.00
+      output_price_per_1m: 5.00
+
+exporter:
+  backend_url: "http://backend:3000/api/spans"
+  batch_size: 100
+  flush_interval: "10s"
