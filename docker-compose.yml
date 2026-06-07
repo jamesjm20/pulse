@@ -19,6 +19,8 @@ services:
       - "3000:3000"
     volumes:
       - pulse_db:/app/data
+    environment:
+      - DB_PATH=/app/data/pulse.db
     networks:
       - pulse
 
